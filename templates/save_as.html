@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Save As</title>
+</head>
+<body>
+    <h1>Save CSV As</h1>
+    <form action="/download" method="post">
+        <label for="filename">Save CSV as:</label>
+        <input type="text" id="filename" name="filename" required>
+        <br>
+        <label for="location">Save location:</label>
+        <input type="text" id="location" name="location" required>
+        <br>
+        <input type="hidden" name="folder1" value="{{ folder1 }}">
+        <input type="hidden" name="folder2" value="{{ folder2 }}">
+        <button type="submit">Download CSV</button>
+    </form>
+</body>
+</html>
+
