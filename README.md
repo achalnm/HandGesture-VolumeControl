@@ -42,3 +42,8 @@ Welcome to the **Volume Control with Hand Gestures** project! This innovative pr
    ```bash
    git clone https://github.com/yourusername/volume-control.git
    cd volume-control
+
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+pip install -r requirements.txt
+
