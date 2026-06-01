@@ -1,4 +1,5 @@
 import argparse
+import ctypes
 import os
 import sys
 import time
@@ -15,9 +16,14 @@ from tensorflow.keras.applications.mobilenet_v2 import preprocess_input as mobil
 IMG_SIZE = 224
 CONFIDENCE_THRESHOLD = 0.75   # act on a gesture only when confidence exceeds this
 COOLDOWN_SECONDS = 0.8        # minimum gap between volume changes
-VOLUME_STEP = 0.1             # fraction of full volume per gesture (10%)
+VOLUME_KEY_STEPS = 5          # key presses per gesture (each step = ~2%, so 5 = ~10%)
 BORDER_THICKNESS = 8
 DEFAULT_MODEL_PATH = 'outputs/model.h5'
+
+# Windows virtual key codes for volume
+VK_VOLUME_UP   = 0xAF
+VK_VOLUME_DOWN = 0xAE
+KEYEVENTF_KEYUP = 0x0002
 
 # BGR colours used in the overlay
 COLOR_GREEN  = (30,  210,  30)   # confident gesture
@@ -117,6 +123,17 @@ def get_volume_interface():
 
 
 # ---------------------------------------------------------------------------
+# Volume control (keyboard events so the native Windows OSD appears)
+# ---------------------------------------------------------------------------
+
+def change_volume(up, steps=VOLUME_KEY_STEPS):
+    key = VK_VOLUME_UP if up else VK_VOLUME_DOWN
+    for _ in range(steps):
+        ctypes.windll.user32.keybd_event(key, 0, 0, 0)              # key down
+        ctypes.windll.user32.keybd_event(key, 0, KEYEVENTF_KEYUP, 0) # key up
+
+
+# ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
 
@@ -172,10 +189,7 @@ def main():
         in_cooldown = (now - last_action_time) < COOLDOWN_SECONDS
 
         if gesture != 'Unknown' and not in_cooldown:
-            if gesture == 'Thumbs Up':
-                volume_ctrl.SetMasterVolumeLevelScalar(min(1.0, current_vol + VOLUME_STEP), None)
-            else:
-                volume_ctrl.SetMasterVolumeLevelScalar(max(0.0, current_vol - VOLUME_STEP), None)
+            change_volume(up=(gesture == 'Thumbs Up'))
             last_action_time = now
             current_vol = volume_ctrl.GetMasterVolumeLevelScalar()
 
