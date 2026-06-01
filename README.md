@@ -1,34 +1,64 @@
 # Hand Gesture Volume Control
 
-A real-time Windows volume controller driven by hand gestures. A MobileNetV2 model fine-tuned on 97 labelled webcam images watches a live webcam feed, classifies each frame as thumbs-up, thumbs-down, or uncertain, and adjusts system volume through the Windows audio API whenever a high-confidence gesture is detected. A confidence threshold of 0.75 and an 0.8-second cooldown prevent false triggers, and the OpenCV display window shows a green/red border, confidence score, and a live volume bar so the system state is always visible.
+A real-time Windows volume controller driven by hand gestures. A MobileNetV2 model fine-tuned via transfer learning watches a live webcam feed, classifies each frame as thumbs-up, thumbs-down, or uncertain, and adjusts system volume through the Windows audio API whenever a high-confidence gesture is detected. A confidence threshold of 0.75 and an 0.8-second cooldown prevent false triggers, and the OpenCV display window shows a green/red border, confidence score, and a live volume bar so the system state is always visible.
+
+This project was developed as part of the **Bachelor of Engineering in Computer Science (BE CSE)** curriculum, under the **Data Visualization and Model Training** course.
 
 ---
 
 ## Results
 
-Model trained on 97 images (50 thumbs-up, 47 thumbs-down), evaluated on a held-out validation set of 20 images (80/20 stratified split). EarlyStopping halted training at epoch 7; best checkpoint was restored from epoch 2.
+Model trained on 388 images (201 thumbs-up, 187 thumbs-down), evaluated on a held-out validation set of 78 images (80/20 stratified split). EarlyStopping halted training at epoch 10; best checkpoint was restored from epoch 5.
 
 | Metric | Value |
 | --- | --- |
-| Accuracy | **0.90** |
-| Precision | **0.90** |
-| Recall | **0.90** |
-| F1-score | **0.90** |
-| ROC AUC | **0.96** |
+| Accuracy | **0.9615** |
+| Precision | **0.9512** |
+| Recall | **0.9750** |
+| F1-score | **0.9630** |
+| ROC AUC | **0.9737** |
 
-> **Important context:** the validation set contains only 20 samples. These metrics reflect strong performance on this specific split but should not be extrapolated to production use. A dataset of several hundred images per class with diverse lighting conditions and hand shapes would be needed to claim production-level reliability. See `outputs/metrics.json` for the machine-readable version of these figures.
+> **Note:** These metrics are reported on the validation split used during training. Performance on entirely unseen data or different lighting conditions may vary. See `outputs/metrics.json` for the full machine-readable report.
 
 ### Confusion Matrix
 
 ![Confusion Matrix](outputs/plots/confusion_matrix.png)
 
-### ROC Curve (AUC = 0.96)
+### ROC Curve (AUC = 0.97)
 
 ![ROC Curve](outputs/plots/roc_curve.png)
 
 ### Training Accuracy
 
 ![Training Accuracy](outputs/plots/training_accuracy.png)
+
+---
+
+## Dataset
+
+The training data consists of 388 images across two classes:
+
+| Class | Count | Source |
+| --- | --- | --- |
+| Thumbs Up | 201 | Personal webcam photos + Bing Image Search |
+| Thumbs Down | 187 | Personal webcam photos + Bing Image Search |
+
+Personal photos were captured using the built-in Flask data collection app (`app.py`). Additional images were downloaded using `src/download_data.py`, which queries Bing Image Search with multiple search terms to get variety in backgrounds, lighting, and hand shapes.
+
+### Using your own dataset
+
+You can retrain the model on your own images to improve accuracy for your specific hand shape, skin tone, and lighting conditions.
+
+1. Place your thumbs-up images in `data/images/thumbs_up/`
+2. Place your thumbs-down images in `data/images/thumbs_down/`
+3. Regenerate the CSV and retrain:
+
+```bash
+python src/preprocess.py --output data/labels.csv
+python src/train.py --csv data/labels.csv --output outputs/models/model.h5
+```
+
+More images generally means better accuracy. Aim for at least 100 images per class, with varied backgrounds and lighting. You can also point `src/download_data.py` at any search term to bulk-download images from Bing automatically.
 
 ---
 
@@ -54,12 +84,12 @@ GlobalAveragePooling2D
 Dense(128, relu) -> Dropout(0.3)
 Dense(1, sigmoid)                # output: probability of thumbs-up
     |
-    +-- output > 0.75  ->  Thumbs Up   ->  pycaw: volume + 10%
-    +-- output < 0.25  ->  Thumbs Down ->  pycaw: volume - 10%
+    +-- output > 0.75  ->  Thumbs Up   ->  volume up (~10%)
+    +-- output < 0.25  ->  Thumbs Down ->  volume down (~10%)
     +-- 0.25 to 0.75   ->  Unknown     ->  no action
 ```
 
-The confidence threshold (0.75) and cooldown (0.8 s) are constants at the top of `src/inference.py` and can be adjusted without retraining the model.
+The confidence threshold (0.75) and cooldown (0.8 s) are constants at the top of `src/inference.py` and can be adjusted without retraining.
 
 ---
 
@@ -109,20 +139,19 @@ Check your available Python versions with `py -0` (Windows Launcher).
 git clone https://github.com/achalnm/HandGesture-VolumeControl.git
 cd HandGesture-VolumeControl
 
-# Create a venv with Python 3.8 specifically
 py -3.8 -m venv venv
 venv\Scripts\activate
 
 pip install -r requirements.txt
 ```
 
-The trained model is already committed to the repo (`outputs/models/model.h5`), so you can skip straight to inference if you do not want to retrain.
+The trained model is already committed to the repo (`outputs/models/model.h5`), so you can skip straight to inference without retraining.
 
 ---
 
 ## Usage
 
-### 1. Collect your own training data
+### 1. Collect training data
 
 Run the Flask data collection app:
 
@@ -130,28 +159,25 @@ Run the Flask data collection app:
 python app.py
 ```
 
-Open `http://localhost:5000` in your browser. Select your thumbs-up image folder and thumbs-down image folder using the upload form. After uploading, click **Generate & Download CSV**. The file is saved to `data/` and downloaded automatically.
+Open `http://localhost:5000`, select your image folders, upload them, and download the generated CSV. It saves to `data/` automatically.
 
-Alternatively, if images are already in `folder1/` (thumbs-up) and `folder2/` (thumbs-down), generate the CSV directly:
+Or download images from Bing directly:
 
 ```bash
-python src/preprocess.py --output data/labels.csv
+python src/download_data.py --per_query 60
 ```
 
 ### 2. Train the model
 
 ```bash
-python src/train.py --csv data/labels.csv --output outputs/model.h5
+python src/train.py --csv data/labels.csv --output outputs/models/model.h5
 ```
 
-Training runs for up to 50 epochs with EarlyStopping (patience 5). With 97 images on CPU it completes in under two minutes. After training, the following files are written automatically:
+Training runs for up to 50 epochs with EarlyStopping. After training, the following are written automatically:
 
-- `outputs/models/model.h5`: best checkpoint (Keras HDF5)
-- `outputs/models/model.tflite`: TFLite export
-- `outputs/training_history.json`: per-epoch loss and accuracy
-- `outputs/training_accuracy.png` and `outputs/training_loss.png`: training curves
-- `outputs/confusion_matrix.png`, `outputs/roc_curve.png`: evaluation plots
-- `outputs/metrics.json`: accuracy, precision, recall, F1, AUC
+- `outputs/models/model.h5` and `outputs/models/model.tflite`
+- `outputs/plots/` — confusion matrix, ROC curve, training curves
+- `outputs/metrics.json` and `outputs/training_history.json`
 
 ### 3. Run real-time inference
 
@@ -161,11 +187,11 @@ python src/inference.py --model outputs/models/model.h5
 
 The OpenCV window shows:
 
-- **Green border**: a gesture has been detected above the confidence threshold
-- **Red border**: no confident gesture detected (uncertain or no hand visible)
-- **Amber "cooldown..." badge**: a gesture was detected but the 0.8 s cooldown has not elapsed yet
-- **Volume bar** (right side): current system master volume as a filled bar
-- **Confidence percentage**: the model's raw output confidence for the detected class
+- **Green border**: gesture detected above the confidence threshold
+- **Red border**: no confident gesture (uncertain or no hand visible)
+- **Amber badge**: gesture detected but cooldown has not elapsed yet
+- **Volume bar** (right side): current system master volume
+- **Confidence %**: model confidence for the detected class
 
 Press **Q** to quit.
 
@@ -173,18 +199,16 @@ Press **Q** to quit.
 
 ## Configuration
 
-All tunable constants are defined at the top of the relevant source file. No retraining is needed to change inference behaviour.
-
 | Constant | File | Default | Description |
 | --- | --- | --- | --- |
-| `CONFIDENCE_THRESHOLD` | `src/inference.py` | `0.75` | Minimum sigmoid output to act on a gesture |
-| `COOLDOWN_SECONDS` | `src/inference.py` | `0.8` | Minimum gap in seconds between volume changes |
-| `VOLUME_STEP` | `src/inference.py` | `0.1` | Volume fraction changed per gesture (10%) |
-| `IMG_SIZE` | all `src/` files | `224` | Frame resize dimension fed to the model |
-| `EPOCHS` | `src/train.py` | `50` | Maximum training epochs (EarlyStopping usually fires earlier) |
-| `LEARNING_RATE` | `src/train.py` | `1e-4` | Adam learning rate for fine-tuning |
-| `UNFREEZE_LAST_N` | `src/train.py` | `30` | Number of MobileNetV2 layers unfrozen for fine-tuning |
-| `PATIENCE` | `src/train.py` | `5` | EarlyStopping patience in epochs |
+| `CONFIDENCE_THRESHOLD` | `src/inference.py` | `0.75` | Minimum confidence to act on a gesture |
+| `COOLDOWN_SECONDS` | `src/inference.py` | `0.8` | Minimum gap between volume changes |
+| `VOLUME_KEY_STEPS` | `src/inference.py` | `5` | Key presses per gesture (each ~2%) |
+| `IMG_SIZE` | all `src/` files | `224` | Input frame size |
+| `EPOCHS` | `src/train.py` | `50` | Max training epochs |
+| `LEARNING_RATE` | `src/train.py` | `1e-4` | Adam learning rate |
+| `UNFREEZE_LAST_N` | `src/train.py` | `30` | MobileNetV2 layers unfrozen for fine-tuning |
+| `PATIENCE` | `src/train.py` | `5` | EarlyStopping patience |
 
 ---
 
@@ -205,10 +229,8 @@ All tunable constants are defined at the top of the relevant source file. No ret
 
 ## Notes
 
-**Why MobileNetV2?** Transfer learning from a model pretrained on 1.2 million ImageNet images lets the network extract meaningful visual features even from a 97-image dataset. A CNN trained from scratch on this little data overfits immediately.
+**Why MobileNetV2?** Transfer learning from a model pretrained on 1.2 million ImageNet images lets the network extract strong visual features even from a small dataset. A CNN trained from scratch on a few hundred images overfits immediately.
 
-**Why only 97 images?** This project demonstrates the full ML pipeline: data collection, preprocessing, transfer learning, evaluation, and real-time inference in a single clean codebase. The architecture scales: collecting 300-500 images per class with varied lighting and hand positions would substantially improve real-world robustness.
+**Extending the model.** The two-class setup (thumbs-up / thumbs-down) is intentional for simplicity, but the architecture extends naturally. Adding a third gesture class requires placing images in a new folder, updating the label logic in `src/preprocess.py`, and changing the output layer in `src/train.py` from sigmoid to softmax.
 
-**Why Python 3.8?** TensorFlow 2.13 is the last release with full Windows binary support on Python 3.8. Newer Python versions require TF 2.14+ which ships a different Keras API. Pinning to 3.8 + TF 2.13 keeps the stack stable.
-
-**Windows only (for inference).** The `pycaw` library wraps the Windows Core Audio API and is not available on macOS or Linux. The training pipeline (`src/train.py`, `src/preprocess.py`, `app.py`) runs on any OS.
+**Windows only (for inference).** The `pycaw` library wraps the Windows Core Audio API and is not available on macOS or Linux. The training pipeline and data collection app run on any OS.
