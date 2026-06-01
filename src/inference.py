@@ -107,8 +107,12 @@ def draw_overlay(frame, gesture, confidence, volume, in_cooldown):
 # ---------------------------------------------------------------------------
 
 def get_volume_interface():
-    devices   = AudioUtilities.GetSpeakers()
-    interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+    device = AudioUtilities.GetSpeakers()
+    # Newer pycaw wraps IMMDevice in an AudioDevice class with EndpointVolume property.
+    # Older pycaw returned the raw COM object which had .Activate() directly.
+    if hasattr(device, 'EndpointVolume'):
+        return device.EndpointVolume
+    interface = device.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
     return cast(interface, POINTER(IAudioEndpointVolume))
 
 
