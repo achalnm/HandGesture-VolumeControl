@@ -44,7 +44,6 @@ def upload():
 
 @app.route('/download', methods=['POST'])
 def download():
-    # secure_filename prevents path traversal; CSV is always written inside data/
     raw_name = request.form.get('filename', 'labels').strip() or 'labels'
     filename = secure_filename(raw_name) or 'labels'
 
