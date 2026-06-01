@@ -20,15 +20,15 @@ Model trained on 97 images (50 thumbs-up, 47 thumbs-down), evaluated on a held-o
 
 ### Confusion Matrix
 
-![Confusion Matrix](outputs/confusion_matrix.png)
+![Confusion Matrix](outputs/plots/confusion_matrix.png)
 
 ### ROC Curve (AUC = 0.96)
 
-![ROC Curve](outputs/roc_curve.png)
+![ROC Curve](outputs/plots/roc_curve.png)
 
 ### Training Accuracy
 
-![Training Accuracy](outputs/training_accuracy.png)
+![Training Accuracy](outputs/plots/training_accuracy.png)
 
 ---
 
@@ -66,24 +66,29 @@ The confidence threshold (0.75) and cooldown (0.8 s) are constants at the top of
 ## Project Structure
 
 ```text
-app.py                    # Flask web app for uploading and labelling training images
+app.py                          # Flask web app for uploading and labelling training images
 src/
-    preprocess.py         # Scan image folders, generate labelled CSV
-    train.py              # MobileNetV2 fine-tuning, evaluation, TFLite export
-    inference.py          # Real-time webcam inference + Windows volume control
-folder1/                  # Thumbs-up training images (50 images)
-folder2/                  # Thumbs-down training images (47 images)
-data/                     # Generated CSV label files
+    train.py                    # MobileNetV2 fine-tuning, evaluation, TFLite export
+    inference.py                # Real-time webcam inference + Windows volume control
+    preprocess.py               # Scan image folders, generate labelled CSV
+    download_data.py            # Download training images from Bing
+data/
+    images/
+        thumbs_up/              # Thumbs-up training images
+        thumbs_down/            # Thumbs-down training images
+    labels.csv                  # Generated image labels (gitignored)
 outputs/
-    model.h5              # Trained Keras model (22 MB, ready to use)
-    model.tflite          # TFLite export for edge deployment (9 MB)
-    confusion_matrix.png
-    roc_curve.png
-    training_accuracy.png
-    training_loss.png
-    training_history.json
+    models/
+        model.h5                # Trained Keras model (ready to use)
+        model.tflite            # TFLite export for edge deployment
+    plots/
+        confusion_matrix.png
+        roc_curve.png
+        training_accuracy.png
+        training_loss.png
     metrics.json
-templates/                # HTML templates for the Flask data collection app
+    training_history.json
+templates/                      # HTML templates for the Flask data collection app
 requirements.txt
 ```
 
@@ -111,7 +116,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-The trained model is already committed to the repo (`outputs/model.h5`), so you can skip straight to inference if you do not want to retrain.
+The trained model is already committed to the repo (`outputs/models/model.h5`), so you can skip straight to inference if you do not want to retrain.
 
 ---
 
@@ -130,7 +135,7 @@ Open `http://localhost:5000` in your browser. Select your thumbs-up image folder
 Alternatively, if images are already in `folder1/` (thumbs-up) and `folder2/` (thumbs-down), generate the CSV directly:
 
 ```bash
-python src/preprocess.py --folder1 folder1 --folder2 folder2 --output data/labels.csv
+python src/preprocess.py --output data/labels.csv
 ```
 
 ### 2. Train the model
@@ -141,8 +146,8 @@ python src/train.py --csv data/labels.csv --output outputs/model.h5
 
 Training runs for up to 50 epochs with EarlyStopping (patience 5). With 97 images on CPU it completes in under two minutes. After training, the following files are written automatically:
 
-- `outputs/model.h5`: best checkpoint (Keras HDF5)
-- `outputs/model.tflite`: TFLite export
+- `outputs/models/model.h5`: best checkpoint (Keras HDF5)
+- `outputs/models/model.tflite`: TFLite export
 - `outputs/training_history.json`: per-epoch loss and accuracy
 - `outputs/training_accuracy.png` and `outputs/training_loss.png`: training curves
 - `outputs/confusion_matrix.png`, `outputs/roc_curve.png`: evaluation plots
@@ -151,7 +156,7 @@ Training runs for up to 50 epochs with EarlyStopping (patience 5). With 97 image
 ### 3. Run real-time inference
 
 ```bash
-python src/inference.py --model outputs/model.h5
+python src/inference.py --model outputs/models/model.h5
 ```
 
 The OpenCV window shows:

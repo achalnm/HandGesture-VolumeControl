@@ -30,8 +30,10 @@ LEARNING_RATE = 1e-4
 PATIENCE = 5
 UNFREEZE_LAST_N = 30
 DEFAULT_CSV = 'data/labels.csv'
-DEFAULT_MODEL_OUTPUT = 'outputs/model.h5'
+DEFAULT_MODEL_OUTPUT = 'outputs/models/model.h5'
 OUTPUTS_DIR = 'outputs'
+MODELS_DIR  = 'outputs/models'
+PLOTS_DIR   = 'outputs/plots'
 
 
 def build_model(img_size=IMG_SIZE):
@@ -80,7 +82,9 @@ def plot_history(history, out_dir):
         plt.close(fig)
 
 
-def evaluate(model, X_val, y_val, out_dir):
+def evaluate(model, X_val, y_val, plots_dir, out_dir=None):
+    if out_dir is None:
+        out_dir = plots_dir
     y_prob = model.predict(X_val, verbose=0).ravel()
     y_pred = (y_prob >= 0.5).astype(int)
 
@@ -105,7 +109,7 @@ def evaluate(model, X_val, y_val, out_dir):
             ax.text(j, i, str(cm[i, j]), ha='center', va='center',
                     color='white' if cm[i, j] > thresh else 'black', fontsize=14)
     fig.tight_layout()
-    fig.savefig(os.path.join(out_dir, 'confusion_matrix.png'), dpi=120, bbox_inches='tight')
+    fig.savefig(os.path.join(plots_dir, 'confusion_matrix.png'), dpi=120, bbox_inches='tight')
     plt.close(fig)
 
     fpr, tpr, _ = roc_curve(y_val, y_prob)
@@ -114,7 +118,7 @@ def evaluate(model, X_val, y_val, out_dir):
     ax.plot([0, 1], [0, 1], 'k--', lw=1)
     ax.set_xlabel('False Positive Rate'); ax.set_ylabel('True Positive Rate')
     ax.set_title('ROC Curve'); ax.legend(loc='lower right')
-    fig.savefig(os.path.join(out_dir, 'roc_curve.png'), dpi=120, bbox_inches='tight')
+    fig.savefig(os.path.join(plots_dir, 'roc_curve.png'), dpi=120, bbox_inches='tight')
     plt.close(fig)
 
     metrics = {
@@ -143,7 +147,8 @@ def main():
     parser.add_argument('--output', default=DEFAULT_MODEL_OUTPUT)
     args = parser.parse_args()
 
-    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+    os.makedirs(MODELS_DIR, exist_ok=True)
+    os.makedirs(PLOTS_DIR,  exist_ok=True)
 
     print(f"Loading {args.csv}")
     images, labels = preprocess_data(args.csv, normalize=False)
@@ -192,10 +197,10 @@ def main():
     with open(os.path.join(OUTPUTS_DIR, 'training_history.json'), 'w') as f:
         json.dump(history_dict, f, indent=2)
 
-    plot_history(history, OUTPUTS_DIR)
-    evaluate(model, X_val_prep, y_val, OUTPUTS_DIR)
+    plot_history(history, PLOTS_DIR)
+    evaluate(model, X_val_prep, y_val, PLOTS_DIR, OUTPUTS_DIR)
 
-    tflite_path = os.path.splitext(args.output)[0] + '.tflite'
+    tflite_path = os.path.join(MODELS_DIR, 'model.tflite')
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     with open(tflite_path, 'wb') as f:
         f.write(converter.convert())

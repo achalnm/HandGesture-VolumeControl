@@ -39,8 +39,8 @@ def count_images(folder):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--folder1',   default='folder1')
-    parser.add_argument('--folder2',   default='folder2')
+    parser.add_argument('--folder1',   default='data/images/thumbs_up')
+    parser.add_argument('--folder2',   default='data/images/thumbs_down')
     parser.add_argument('--per_query', type=int, default=60)
     args = parser.parse_args()
 

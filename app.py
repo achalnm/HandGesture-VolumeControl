@@ -29,8 +29,8 @@ def upload():
     if not folder1_files or not folder2_files:
         return 'No valid images found in one or both folders', 400
 
-    folder1_path = os.path.join(app.root_path, 'folder1')
-    folder2_path = os.path.join(app.root_path, 'folder2')
+    folder1_path = os.path.join(app.root_path, 'data', 'images', 'thumbs_up')
+    folder2_path = os.path.join(app.root_path, 'data', 'images', 'thumbs_down')
     os.makedirs(folder1_path, exist_ok=True)
     os.makedirs(folder2_path, exist_ok=True)
 
@@ -51,8 +51,8 @@ def download():
     os.makedirs(data_dir, exist_ok=True)
     csv_path = os.path.join(data_dir, f'{filename}.csv')
 
-    folder1_path = os.path.join(app.root_path, 'folder1')
-    folder2_path = os.path.join(app.root_path, 'folder2')
+    folder1_path = os.path.join(app.root_path, 'data', 'images', 'thumbs_up')
+    folder2_path = os.path.join(app.root_path, 'data', 'images', 'thumbs_down')
 
     with open(csv_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)

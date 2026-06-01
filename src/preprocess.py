@@ -44,8 +44,8 @@ def preprocess_data(csv_file, img_size=IMG_SIZE, normalize=True):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--folder1', default='folder1')
-    parser.add_argument('--folder2', default='folder2')
+    parser.add_argument('--folder1', default='data/images/thumbs_up')
+    parser.add_argument('--folder2', default='data/images/thumbs_down')
     parser.add_argument('--output',  default='data/labels.csv')
     args = parser.parse_args()
     generate_csv(args.folder1, args.folder2, args.output)
