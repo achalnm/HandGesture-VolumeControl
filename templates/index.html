@@ -3,19 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Folders and Images</title>
+    <title>Gesture Data Collection</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 580px; margin: 60px auto; padding: 0 24px; color: #222; }
+        h1  { font-size: 1.4rem; margin-bottom: 0.25rem; }
+        p   { color: #555; margin-top: 0.25rem; }
+        label { display: block; margin-top: 1.4rem; font-weight: bold; }
+        .hint { font-weight: normal; font-size: 0.85rem; color: #777; margin-left: 6px; }
+        input[type=file] { display: block; margin-top: 0.4rem; width: 100%; }
+        button {
+            margin-top: 2rem; padding: 0.6rem 1.6rem;
+            background: #1a1a1a; color: #fff; border: none;
+            border-radius: 4px; cursor: pointer; font-size: 0.95rem;
+        }
+        button:hover { background: #444; }
+    </style>
 </head>
 <body>
-    <h1>Upload Folders and Images</h1>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <label for="folder1">Upload Folder or Images 1:</label>
-        <input type="file" name="folder1" id="folder1" multiple webkitdirectory mozdirectory>
-        <br>
-        <label for="folder2">Upload Folder or Images 2:</label>
-        <input type="file" name="folder2" id="folder2" multiple webkitdirectory mozdirectory>
-        <br>
-        <button type="submit">Upload</button>
+    <h1>Hand Gesture Data Collection</h1>
+    <p>Select your thumbs-up folder and thumbs-down folder, then click Upload.</p>
+
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <label for="folder1">
+            Thumbs Up folder
+            <span class="hint">(select the entire folder)</span>
+        </label>
+        <input type="file" id="folder1" name="folder1"
+               accept=".jpg,.jpeg,.png" multiple webkitdirectory mozdirectory required>
+
+        <label for="folder2">
+            Thumbs Down folder
+            <span class="hint">(select the entire folder)</span>
+        </label>
+        <input type="file" id="folder2" name="folder2"
+               accept=".jpg,.jpeg,.png" multiple webkitdirectory mozdirectory required>
+
+        <button type="submit">Upload Images</button>
     </form>
 </body>
 </html>
-

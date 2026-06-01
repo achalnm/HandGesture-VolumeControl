@@ -1,0 +1,10 @@
+{
+  "validation_samples": 20,
+  "small_validation_set": true,
+  "accuracy": 0.9,
+  "precision": 0.9,
+  "recall": 0.9,
+  "f1_score": 0.9,
+  "roc_auc": 0.96,
+  "note": "Validation set contains only 20 samples. This is a small-dataset proof-of-concept \u2014 metrics should be interpreted with caution and are not representative of production-level performance."
+}

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+*.weights.h5
+data/*.csv
